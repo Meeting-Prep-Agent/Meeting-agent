@@ -18,15 +18,9 @@ class GroqService:
             "FAST": "openai/gpt-oss-20b",
             "STRATEGIC": "openai/gpt-oss-120b"
         }
-        # Supported Groq model fallback list if specified model name is not hosted on API tier
-        self.supported_fallbacks = {
-            "FAST": "llama-3.1-8b-instant",
-            "STRATEGIC": "llama-3.3-70b-versatile"
-        }
 
     async def _run_completion(self, messages: List[Dict[str, str]], model_key: str = "FAST", json_mode: bool = True):
         target_model = self.models.get(model_key, self.models["FAST"])
-        fallback_model = self.supported_fallbacks.get(model_key, "llama-3.3-70b-versatile")
 
         try:
             response = await self.client.chat.completions.create(
@@ -36,20 +30,9 @@ class GroqService:
                 temperature=0.1,
                 timeout=10.0
             )
-        except Exception as primary_err:
-            logger.warning(f"Groq call with target model {target_model} failed ({primary_err}). Trying supported Groq model {fallback_model}...")
-            try:
-                response = await self.client.chat.completions.create(
-                    messages=messages,
-                    model=fallback_model,
-                    response_format={"type": "json_object"} if json_mode else None,
-                    temperature=0.1,
-                    timeout=15.0
-                )
-            except Exception as fallback_err:
-                logger.error(f"Groq API call completely failed on both {target_model} and {fallback_model}: {fallback_err}")
-                # NO MOCK FALLBACK! Raise the real exception so caller gets honest error
-                raise fallback_err
+        except Exception as err:
+            logger.error(f"Groq API call with model {target_model} failed: {err}")
+            raise err
 
         content = response.choices[0].message.content
         if json_mode:
