@@ -185,5 +185,5 @@ Meeting-Prep-Agent/
 
 ## Project Status & License
 
-- **Project Status**: Working hackathon prototype / proof-of-concept application.
+- **Project Status**: Working prototype / proof-of-concept application.
 - **License**: Not specified.
